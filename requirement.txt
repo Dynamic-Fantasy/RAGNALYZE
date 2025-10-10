@@ -1,0 +1,11 @@
+langchain-openai
+openai
+langgraph
+langchain
+langchain-community
+transformers
+sentence-transformers
+pypdf
+langchain-chroma
+langchain-groq
+reportlab
