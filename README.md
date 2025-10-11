@@ -235,11 +235,6 @@ This project is licensed under the MIT License - see the LICENSE file for detail
 - [Groq](https://groq.com/) for fast LLM inference
 - [HuggingFace](https://huggingface.co/) for embeddings models
 
-##  Contact
-
-Your Name - [@yourtwitter](https://twitter.com/yourtwitter)
-
-Project Link: [https://github.com/yourusername/rag-feedback-analyzer](https://github.com/yourusername/rag-feedback-analyzer)
 
 ##  Roadmap
 
