@@ -175,11 +175,11 @@ The application uses custom CSS for styling. Key UI elements:
 
 ```
 rag-feedback-analyzer/
-├── web_ragnalyze.py       # Main application file
+├── web_ragnalyze.py       # Web Based file
 ├── requirements.txt        # Python dependencies
 ├── chroma_db/             # Vector store (generated)
 ├── chat_export.pdf        # Exported chats (generated)
-├── adv_ragnalyze.py
+├── adv_ragnalyze.py       # Terminal Based file
 └── README.md              # Documentation
 ```
 
