@@ -76,6 +76,7 @@ chromadb>=0.4.18
 sentence-transformers>=2.2.2
 reportlab>=4.0.0
 typing-extensions>=4.8.0
+streamlit>=1.50.0
 ```
 
 ##  Usage
