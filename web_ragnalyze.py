@@ -31,180 +31,9 @@ st.set_page_config(
 )
 
 # Modern CSS with sleek design
-st.markdown("""
-<style>
-    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
-    
-    * { font-family: 'Inter', sans-serif; }
-    .stApp { background: #0f1419; }
-    .main { background: #0f1419; }
-    
-    [data-testid="stSidebar"] {
-        background: linear-gradient(180deg, #1a1f2e 0%, #161b28 100%);
-        border-right: 1px solid rgba(99, 102, 241, 0.1);
-    }
-    
-    [data-testid="stSidebar"] h1, [data-testid="stSidebar"] h2, [data-testid="stSidebar"] h3 {
-        color: #e2e8f0 !important;
-        font-weight: 600;
-    }
-    
-    .user-message {
-        background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
-        color: white;
-        padding: 16px 20px;
-        border-radius: 20px 20px 4px 20px;
-        margin: 12px 0;
-        max-width: 75%;
-        margin-left: auto;
-        box-shadow: 0 4px 16px rgba(99, 102, 241, 0.3);
-        font-size: 15px;
-        line-height: 1.6;
-    }
-    
-    .ai-message {
-        background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
-        border: 1px solid rgba(99, 102, 241, 0.2);
-        color: #e2e8f0;
-        padding: 16px 20px;
-        border-radius: 20px 20px 20px 4px;
-        margin: 12px 0;
-        max-width: 75%;
-        box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
-        font-size: 15px;
-        line-height: 1.6;
-    }
-    
-    .stButton>button {
-        background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
-        color: white;
-        border: none;
-        border-radius: 12px;
-        padding: 12px 28px;
-        font-weight: 600;
-        font-size: 14px;
-        transition: all 0.3s ease;
-        box-shadow: 0 4px 16px rgba(99, 102, 241, 0.3);
-        height: 46px;
-        margin-top: 26px;
-    }
-    
-    .stButton>button:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 6px 24px rgba(99, 102, 241, 0.4);
-        background: linear-gradient(135deg, #7c3aed 0%, #a855f7 100%);
-    }
-    
-    .stTextInput>div>div>input {
-        background: rgba(30, 41, 59, 0.6);
-        border: 1px solid rgba(99, 102, 241, 0.2);
-        border-radius: 12px;
-        color: #e2e8f0;
-        padding: 12px 16px;
-        font-size: 14px;
-        transition: all 0.3s ease;
-    }
-    
-    .stTextInput>div>div>input:focus {
-        border-color: #6366f1;
-        box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
-        background: rgba(30, 41, 59, 0.8);
-    }
-    
-    .stSelectbox>div>div>div {
-        background: rgba(30, 41, 59, 0.6);
-        border: 1px solid rgba(99, 102, 241, 0.2);
-        border-radius: 12px;
-        color: #e2e8f0;
-    }
-    
-    [data-testid="stFileUploader"] {
-        background: rgba(30, 41, 59, 0.4);
-        border: 2px dashed rgba(99, 102, 241, 0.3);
-        border-radius: 16px;
-        padding: 20px;
-    }
-    
-    h1, h2, h3 {
-        color: #e2e8f0 !important;
-        font-weight: 700 !important;
-        letter-spacing: -0.02em;
-    }
-    
-    h1 {
-        font-size: 2.5rem !important;
-        background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
-        -webkit-background-clip: text;
-        -webkit-text-fill-color: transparent;
-    }
-    
-    .status-badge {
-        display: inline-block;
-        padding: 6px 16px;
-        border-radius: 20px;
-        font-size: 13px;
-        font-weight: 600;
-        margin: 6px 4px;
-    }
-    
-    .success-badge {
-        background: linear-gradient(135deg, #10b981 0%, #059669 100%);
-        color: white;
-        box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
-    }
-    
-    .info-badge {
-        background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
-        color: white;
-        box-shadow: 0 4px 12px rgba(245, 158, 11, 0.3);
-    }
-    
-    .log-message {
-        background: rgba(15, 23, 42, 0.8);
-        border: 1px solid rgba(99, 102, 241, 0.2);
-        color: #10b981;
-        padding: 10px 14px;
-        border-radius: 8px;
-        font-family: 'Courier New', monospace;
-        font-size: 12px;
-        margin: 6px 0;
-    }
-    
-    [data-testid="stMetricValue"] {
-        color: #6366f1 !important;
-        font-weight: 700 !important;
-    }
-    
-    hr { border-color: rgba(99, 102, 241, 0.2) !important; }
-    
-    ::-webkit-scrollbar { width: 10px; }
-    ::-webkit-scrollbar-track { background: #1a1f2e; }
-    ::-webkit-scrollbar-thumb {
-        background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
-        border-radius: 5px;
-    }
-    
-            
-/* added for testing purposes */
-    .footer-container {
-        position: fixed;
-        bottom: 0;
-        left: 0;
-        right: 0;
-        background: linear-gradient(180deg, transparent 0%, #0f1419 50%);
-        padding: 20px 0 10px 0;
-        text-align: center;
-        z-index: 999;
-    }
-    
-    .footer-text {
-        color: #64748b;
-        font-size: 14px;
-        text-align: center;
-        margin: 0;
-    }
-</style>
-""", unsafe_allow_html=True)
+# Load external CSS file
+with open('styles.css') as f:
+    st.markdown(f'<style>{f.read()}</style>', unsafe_allow_html=True)
 
 # Initialize session state
 if 'conversation_history' not in st.session_state:
@@ -222,7 +51,7 @@ if 'debug_logs' not in st.session_state:
 
 def log_debug(message):
     """Add debug log message"""
-    st.session_state.debug_logs.append(f"[{datetime.now().strftime('%H:%M:%S')}] {message}")
+    st.session_state.debug_logs.append(f"[{datetime.now().strftime('%I:%M %p')}] {message}")
 
 def initialize_system(groq_api_key, uploaded_file, model_name, chunk_size, chunk_overlap, retrieval_k):
     """Initialize the RAG system with all components"""
@@ -274,7 +103,30 @@ def initialize_system(groq_api_key, uploaded_file, model_name, chunk_size, chunk
     retriever = vectorstore.as_retriever(
         search_type="similarity", 
         search_kwargs={"k": retrieval_k}
+        
     )
+
+    @tool
+    def retriever_tool(query: str) -> str:
+        """
+        This tool searches and returns information from the uploaded PDF.
+        Use this for:
+        - Specific questions about feedback content
+        - Finding solutions, fixes, or improvements mentioned in feedback
+        - Answering 'how to fix' or 'what solutions' questions
+        - Any detailed analysis of feedback items
+        """
+        docs = retriever.invoke(query)
+        if not docs:
+            return "The provided documents do not contain enough information to answer this"
+        
+        results = []
+        for i, doc in enumerate(docs):
+            results.append(f"Document {i+1}:\n{doc.page_content}")
+        
+        return "\n\n".join(results)
+    
+
 
     # Define tools with EXACT original logic
     @tool
@@ -315,25 +167,6 @@ def initialize_system(groq_api_key, uploaded_file, model_name, chunk_size, chunk
                         
         return "\n\n".join(results)
     
-    @tool
-    def retriever_tool(query: str) -> str:
-        """
-        This tool searches and returns information from the uploaded PDF.
-        Use this for:
-        - Specific questions about feedback content
-        - Finding solutions, fixes, or improvements mentioned in feedback
-        - Answering 'how to fix' or 'what solutions' questions
-        - Any detailed analysis of feedback items
-        """
-        docs = retriever.invoke(query)
-        if not docs:
-            return "The provided documents do not contain enough information to answer this"
-        
-        results = []
-        for i, doc in enumerate(docs):
-            results.append(f"Document {i+1}:\n{doc.page_content}")
-        
-        return "\n\n".join(results)
 
     @tool
     def export_chat_to_pdf(filename: str = "chat_export") -> str:
@@ -380,7 +213,7 @@ def initialize_system(groq_api_key, uploaded_file, model_name, chunk_size, chunk
             )
             
             story = []
-            story.append(Paragraph(f"<b>Chat Export - {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}</b>", styles['Title']))
+            story.append(Paragraph(f"<b>Chat Export - {datetime.now().strftime('%d-%Y-%m %I:%M: %p')}</b>", styles['Title']))
             story.append(Spacer(1, 0.3*inch))
             
             if not st.session_state.conversation_history:
@@ -527,17 +360,33 @@ Always follow these rules:
 
 # Sidebar
 with st.sidebar:
-    st.image(rf"C:\Users\bipin\Downloads\1000087791-removebg-preview.png", width=600)
-    st.title("Configuration")
+    #st.image(rf"C:\Users\bipin\Downloads\1000087791-removebg-preview.png", width=600)
+   # st.markdown('<div class="loader"></div>', unsafe_allow_html=True)
+    st.markdown("""<div class="config-heading">Configuration</div>""" , unsafe_allow_html=True)
     
     st.subheader("🔑 API Keys")
     groq_api_key = st.text_input("Groq API Key", type="password")
+
+    st.divider()
+
     
     st.subheader("📄 Upload PDF")
     uploaded_file = st.file_uploader("Choose a PDF file", type=['pdf'])
+
+    st.divider()
     
     st.subheader("🤖 Model Settings")
-    model_name = st.selectbox("Select Model", ["openai/gpt-oss-20b","llama-3.1-70b-versatile", "mixtral-8x7b-32768"])
+    model_list =[
+    "openai/gpt-oss-120b", 
+    "openai/gpt-oss-20b",
+    "llama-3.1-8b",
+    "llama-3.3-70b",
+    "meta-llama/llama-guard-4-12b",
+    "whisper-large-v3",
+    "whisper-large-v3-turbo"
+    ]
+
+    model_name = st.selectbox("Select Model",model_list)
     
     with st.expander("⚙️ Advanced Settings"):
         chunk_size = st.number_input("Chunk Size", 100, 2000, 1000)
@@ -550,11 +399,12 @@ with st.sidebar:
         elif not uploaded_file:
             st.error("❌ Please upload a PDF!")
         else:
-            with st.spinner("🔄 Initializing..."):
+            with st.spinner("Initializing..."):
                 try:
                     initialize_system(groq_api_key, uploaded_file, model_name, chunk_size, chunk_overlap, retrieval_k)
                     st.success("✅ System initialized!")
                     st.balloons()
+                    
                 except Exception as e:
                     st.error(f"❌ Error: {str(e)}")
 
@@ -573,22 +423,91 @@ with st.sidebar:
         for log in st.session_state.debug_logs[-10:]:  # Show last 10 logs
             st.markdown(f'<div class="log-message">{log}</div>', unsafe_allow_html=True)
     
-    if st.button("🗑️ Clear Chat", use_container_width=True):
+    if st.button("🗑️ Clear Chat", use_container_width=True) and st.session_state.conversation_history:
         st.session_state.conversation_history = []
         st.rerun()
 
+
+        
 # Main area
-st.title("🔍 RAG Feedback Analyzer")
-st.markdown("### Analyze, Search, and Understand Feedback with AI")
+st.markdown("""<div class="heading">RAG Feedback Analyzer</div>""" , unsafe_allow_html=True)
+
+st.markdown("""<div class="sub-heading">Analyze, Search, and Understand Feedback with AI</div>""",unsafe_allow_html=True)
+
+st.markdown("""<div class="animated-bg">
+        <div class="gradient-orb orb-1"></div>
+        <div class="gradient-orb orb-2"></div>
+        <div class="gradient-orb orb-3"></div>
+    </div>""",unsafe_allow_html=True)
 
 if not st.session_state.initialized:
-    st.info("👈 Configure and initialize the system using the sidebar")
+    # Using st.container for better compatibility
+    st.markdown('<div class="home-container">', unsafe_allow_html=True)
+    
+    # Icon
+   # st.markdown('<div class="home-icon-wrapper"><div class="home-icon">🔍</div></div>', unsafe_allow_html=True)
+    
+    # Features grid
+    col1, col2, col3 = st.columns(3)
+    
+    with col1:
+        st.markdown("""
+        <div class="feature-card">
+            <div class="feature-ai"><img src="https://i.ibb.co/TqK11G3F/1752656706683-0-removebg-preview.png" class="img-1"></div>
+            <h3 class="feature-title">AI-Powered</h3>
+            <p class="feature-description">Analyze feedback patterns automatically</p>
+        </div>
+                    
+        """, unsafe_allow_html=True)
+    
+    with col2:
+        st.markdown("""
+        <div class="feature-card">
+            <div class="feature-search"><img src="https://i.ibb.co/JRqRnm0N/search-interface-symbol.png"</div>
+            <h3 class="feature-title">Smart Search</h3>
+            <p class="feature-description">Find feedback instantly with </p>
+        </div>
+        """, unsafe_allow_html=True)
+    
+    with col3:
+        st.markdown("""
+        <div class="feature-card">
+            <div class="feature-graph"><img src="https://i.ibb.co/fdqwCjw7/search-alt.png"</div>
+            <h3 class="feature-title">Quick Insights</h3>
+            <p class="feature-description">Get recommendations in seconds</p>
+        </div>
+        """, unsafe_allow_html=True)
+    
+    # CTA box
+    st.markdown("""
+    <div class="cta-box">
+        <p class="cta-text"> Configure and initialize the system using the sidebar</p>
+    </div>
+    """, unsafe_allow_html=True)
+    
+    st.markdown('</div>', unsafe_allow_html=True)
+    
 else:
     for msg in st.session_state.conversation_history:
+        timestamp = datetime.now().strftime('%I:%M %p')
+        
         if isinstance(msg, HumanMessage):
-            st.markdown(f'<div class="user-message">👤 <strong>You:</strong><br/>{msg.content}</div>', unsafe_allow_html=True)
+            st.markdown(f'''
+            <div class="user-message">
+                <strong>You</strong>
+                <span class="timestamp">{timestamp}</span>
+                <br/>{msg.content}
+            </div>
+            ''', unsafe_allow_html=True)
+            
         elif isinstance(msg, AIMessage):
-            st.markdown(f'<div class="ai-message">🤖 <strong>AI:</strong><br/>{msg.content}</div>', unsafe_allow_html=True)
+            st.markdown(f'''
+            <div class="ai-message">
+                <strong>AI</strong>
+                <span class="timestamp">{timestamp}</span>
+                <br/>{msg.content}
+            </div>
+            ''', unsafe_allow_html=True)
     
     st.markdown("---")
     with st.form(key="chat_form", clear_on_submit=True):
@@ -607,13 +526,11 @@ else:
                 st.rerun()
             except Exception as e:
                 st.error(f"❌ Error: {str(e)}")
-
-
 st.markdown("---")
-col1, col2= st.columns(2)
+col1, col2 , col3 ,col4= st.columns(4)
 with col1:
     st.markdown("**Total Messages:** " + str(len(st.session_state.conversation_history)))
-with col2:
+with col4:
     st.markdown("**Using:** " + model_name)
 
 
@@ -622,9 +539,10 @@ st.markdown("---")
 st.markdown("""
 <div class="footer-container">
     <hr style="margin: 0 auto 10px auto; width: 90%; border-color: rgba(99, 102, 241, 0.2);">
-    <p class="footer-text">Built with ❤️ using Streamlit & LangChain</p>
+    <p class="footer-text">Smarter insights ❤️ powered by RAG </p>
 </div>
 """, unsafe_allow_html=True)
+
 
 st.markdown("---")
 
