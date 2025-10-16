@@ -48,7 +48,7 @@ An intelligent document Q&A system built with Streamlit, LangChain, and Groq LLM
 
 1. **Clone the repository**
 ```bash
-git clone https://github.com/yourusername/rag-feedback-analyzer.git
+git clone https://github.com/Dynamic-Fantasy/rag-feedback-analyzer.git
 cd rag-feedback-analyzer
 ```
 
