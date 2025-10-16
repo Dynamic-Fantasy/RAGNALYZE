@@ -9,3 +9,7 @@ pypdf
 langchain-chroma
 langchain-groq
 reportlab
+streamlit
+
+
+
