@@ -1,6 +1,7 @@
 import streamlit as st
 import os
 import json
+import requests
 import re
 from datetime import datetime
 from typing import Annotated, Sequence
@@ -25,14 +26,14 @@ from reportlab.lib.colors import HexColor
 # Page configuration
 st.set_page_config(
     page_title="RAG Feedback Analyzer",
-    page_icon="🔍",
+    page_icon="📊",
     layout="wide",
     initial_sidebar_state="expanded"
 )
 
 # Modern CSS with sleek design
 # Load external CSS file
-with open('styles.css') as f:
+with open('temp.css') as f:
     st.markdown(f'<style>{f.read()}</style>', unsafe_allow_html=True)
 
 # Initialize session state
@@ -48,18 +49,35 @@ if 'tools_dict' not in st.session_state:
     st.session_state.tools_dict = {}
 if 'debug_logs' not in st.session_state:
     st.session_state.debug_logs = []
+if 'temp_pdf_path' not in st.session_state:
+    st.session_state.temp_pdf_path = None
 
 def log_debug(message):
     """Add debug log message"""
-    st.session_state.debug_logs.append(f"[{datetime.now().strftime('%I:%M %p')}] {message}")
+    st.session_state.debug_logs.append(f"[{datetime.now().strftime('%I:%M %p')}]\n {message}")
+    if len(st.session_state.debug_logs) > 10:
+        st.session_state.debug_logs = st.session_state.debug_logs[-10:]
+
+def cleanup_temp_file(filepath):
+    """Safely remove temporary file"""
+    try:
+        if filepath and os.path.exists(filepath):
+            os.remove(filepath)
+            log_debug(f"Cleaned up temp file: {filepath}")
+    except Exception as e:
+        log_debug(f"Error cleaning temp file: {str(e)}")
 
 def initialize_system(groq_api_key, uploaded_file, model_name, chunk_size, chunk_overlap, retrieval_k):
     """Initialize the RAG system with all components"""
     st.session_state.debug_logs = []
     log_debug("Starting initialization...")
-    
+
+    # Cleanup old temp file if exists
+    if st.session_state.temp_pdf_path:
+        cleanup_temp_file(st.session_state.temp_pdf_path)
     #Save Uploaded File
     pdf_path = f"temp_{uploaded_file.name}"
+    st.session_state.temp_pdf_path = pdf_path
     with open(pdf_path, "wb") as f:
         f.write(uploaded_file.getbuffer())
     
@@ -116,15 +134,23 @@ def initialize_system(groq_api_key, uploaded_file, model_name, chunk_size, chunk
         - Answering 'how to fix' or 'what solutions' questions
         - Any detailed analysis of feedback items
         """
-        docs = retriever.invoke(query)
-        if not docs:
-            return "The provided documents do not contain enough information to answer this"
-        
-        results = []
-        for i, doc in enumerate(docs):
-            results.append(f"Document {i+1}:\n{doc.page_content}")
-        
-        return "\n\n".join(results)
+
+        try:
+            docs = retriever.invoke(query)
+            if not docs:
+                return "The provided documents do not contain enough information to answer this"
+            
+            results = []
+            for i, doc in enumerate(docs , 1):
+
+                # ^ feature 
+                content = doc.page_content[:500] + "..." if len(doc.page_content) > 500 else doc.page_content
+                results.append(f"Document {i+1}:\n{content}")
+            
+            return "\n\n".join(results)
+        except Exception as e:
+            log_debug(f"Error in retriever_tool: {str(e)}")
+            return f"Error retrieving documents: {str(e)}"
     
 
 
@@ -142,30 +168,39 @@ def initialize_system(groq_api_key, uploaded_file, model_name, chunk_size, chunk
 
         """
 
+        try:
 
+            count_match = re.search(r'top\s+(\d+)|first\s+(\d+)|(\d+)\s+feedback', query.lower())
+            if count_match:
+                count = int(count_match.group(1) or count_match.group(2) or count_match.group(3))
+            else:
+                count = 10
 
-        count_match = re.search(r'top\s+(\d+)|first\s+(\d+)|(\d+)\s+feedback', query.lower())
-        if count_match:
-            count = int(count_match.group(1) or count_match.group(2) or count_match.group(3))
-        else:
-            count = 10
-                        
-        if any(word in query.lower() for word in ['all', 'list', 'show', 'top', 'first', 'give']):
-            docs = vectorstore.similarity_search("feedback customer review opinion", k=count)
-        else:
-            docs = vectorstore.similarity_search(query, k=count)
-                        
-        if not docs:
-            return "No feedback items found in the database."
-                        
-        results = []
-        for i, doc in enumerate(docs, 1):
-            feedback_id = doc.metadata.get('feedback_id', f'Unknown_{i}')
-            page_num = doc.metadata.get('page', 'Unknown')
-            content = doc.page_content[:300] + "..." if len(doc.page_content) > 300 else doc.page_content
-            results.append(f"{i}. Feedback ID: {feedback_id} (Page {page_num}):\n{content}")
-                        
-        return "\n\n".join(results)
+            # Limit to reasonable number
+            count = min(count, 20)
+            # Search for feedbacks
+            if any(word in query.lower() for word in ['all', 'list', 'show', 'top', 'first', 'give']):
+                # Search for feedbacks
+                docs = vectorstore.similarity_search(" ", k=count)
+            else:
+                docs = vectorstore.similarity_search(query, k=count)
+                            
+            if not docs:
+                return "No feedback items found in the database."
+                            
+            results = []
+            for i, doc in enumerate(docs, 1):
+                feedback_id = doc.metadata.get('feedback_id', f'Unknown_{i}')
+                page_num = doc.metadata.get('page', i)
+                content = doc.page_content[:300] + "..." if len(doc.page_content) > 300 else doc.page_content
+                results.append(f"{i}. Feedback ID: {feedback_id} (Page {page_num}):\n{content}")
+                            
+            return "\n\n".join(results)
+        
+        except Exception as e:
+            log_debug(f"Error in show_feedbacks_tool: {str(e)}")
+            return f"Error retrieving feedbacks: {str(e)}"
+
     
 
     @tool
@@ -253,7 +288,6 @@ def initialize_system(groq_api_key, uploaded_file, model_name, chunk_size, chunk
     class AgentState(TypedDict):
         messages: Annotated[Sequence[BaseMessage], add_messages]
     
-    #system_prompt = """You are a RAG assistant. Use show_feedbacks_tool for listing feedbacks, retriever_tool for specific queries, and export_chat_to_pdf only when explicitly asked. Call each tool only once per request."""
     system_prompt = """
 You are an assistant designed to answer user questions using only the provided context from documents.
 The documents come from PDF files that have been preprocessed to extract individual feedback items.
@@ -352,23 +386,112 @@ Always follow these rules:
     log_debug("System initialized successfully!")
 
 
-
-
-
+############################################## API ##############################################################
+# Dialog for API Key Management
+@st.dialog("API Key Configuration")
+def api_key_dialog():
+    st.write("**Enter your Groq API Key**")
+    st.caption("Your API key will be validated and saved securely.")
     
-                    
+    api_key_input = st.text_input("Groq API Key", type="password", key="dialog_api_key")
+    
+    col1, col2 = st.columns(2)
+    with col1:
+        if st.button("Save", use_container_width=True, type="tertiary"):
+            if not api_key_input:
+                st.error("❌ Please enter an API key")
+            else:
+                with st.spinner("Validating..."):
+                    try:
+                        r = requests.get(
+                            "https://api.groq.com/openai/v1/models",
+                            headers={"Authorization": f"Bearer {api_key_input}"}
+                        )
+                        
+                        if r.status_code == 200:
+                            api_data = r.json()
+                            if api_data.get("data") and api_data["data"][0].get("active", False):
+                                # Valid key - save it
+                                config = {}
+                                try:
+                                    with open("config.json") as f:
+                                        config = json.load(f)
+                                except:
+                                    pass
+                                
+                                config["groq"] = api_key_input
+                                with open("config.json", "w") as f:
+                                    json.dump(config, f, indent=2)
+                                
+                                st.session_state.api_key_valid = True
+                                st.session_state.last_validated_key = api_key_input
+                                st.success("✓ API key validated and saved!")
+                                st.rerun()
+                            else:
+                                st.error("❌ Invalid API key")
+                        else:
+                            
+                            st.error(f"❌ Validation failed (Status {r.status_code})")
+                    except Exception as e:
+                        st.error(f"❌ Error: {str(e)}")
+    
+    with col2:
+        if st.button("Cancel", key="cancel_button", type="secondary", use_container_width=True):
+
+            st.rerun()
 
 # Sidebar
 with st.sidebar:
-    #st.image(rf"C:\Users\bipin\Downloads\1000087791-removebg-preview.png", width=600)
-   # st.markdown('<div class="loader"></div>', unsafe_allow_html=True)
-    st.markdown("""<div class="config-heading">Configuration</div>""" , unsafe_allow_html=True)
+    st.markdown("""<div class="config-heading">Configuration</div>""", unsafe_allow_html=True)
     
-    st.subheader("🔑 API Keys")
-    groq_api_key = st.text_input("Groq API Key", type="password")
+    st.subheader("API Keys")
+    
+    # Load existing config
+    try:
+        with open("config.json") as f:
+            config = json.load(f)
+        saved_key = config.get("groq", "")
+    except (FileNotFoundError, json.JSONDecodeError):
+        config = {}
+        saved_key = ""
+    
+    # Initialize session state for validation status
+    if 'api_key_valid' not in st.session_state:
+        st.session_state.api_key_valid = bool(saved_key)
+    if 'last_validated_key' not in st.session_state:
+        st.session_state.last_validated_key = saved_key
+    
+    # Set groq_api_key variable
+    groq_api_key = saved_key if st.session_state.api_key_valid else ""
+    
+    # Show saved key status or button to add key
+    if saved_key and st.session_state.api_key_valid:
+        st.markdown('<div class="api-key-saved">✓ Valid API Key Loaded</div>', unsafe_allow_html=True)
+        
+        col1, col2 = st.columns(2)
+        with col1:
+            
+            if st.button("New Key", use_container_width=True):
+                api_key_dialog()
+        with col2:
+            if st.button("Clear Key", key="clear-key" , use_container_width=True):
+                config.pop("groq", None)
+                with open("config.json", "w") as f:
+                    json.dump(config, f, indent=2)
+                st.session_state.api_key_valid = False
+                st.session_state.last_validated_key = ""
+                st.rerun()
+    else:
+        if st.button("Add API Key", use_container_width=True, type="tertiary"):  # ^ Use Primary to custom target the buttons
+            api_key_dialog()
+        st.markdown('<div class="api-error-badge" style="padding: 10px; border-radius: 8px; text-align: center; margin-bottom: 10px;">⚠️ No API Key Found</div>', 
+                    unsafe_allow_html=True)
+############################################## API ##############################################################
+
+
+
 
     st.divider()
-
     
     st.subheader("📄 Upload PDF")
     uploaded_file = st.file_uploader("Choose a PDF file", type=['pdf'])
@@ -378,12 +501,10 @@ with st.sidebar:
     st.subheader("🤖 Model Settings")
     model_list =[
     "openai/gpt-oss-120b", 
+
     "openai/gpt-oss-20b",
     "llama-3.1-8b",
-    "llama-3.3-70b",
-    "meta-llama/llama-guard-4-12b",
-    "whisper-large-v3",
-    "whisper-large-v3-turbo"
+    "llama-3.3-70b"
     ]
 
     model_name = st.selectbox("Select Model",model_list)
@@ -393,7 +514,7 @@ with st.sidebar:
         chunk_overlap = st.number_input("Chunk Overlap", 0, 500, 200)
         retrieval_k = st.number_input("Retrieval K", 1, 10, 5)
     
-    if st.button("🚀 Initialize System", use_container_width=True):
+    if st.button("🚀 Initialize System", use_container_width=True , type="primary"):
         if not groq_api_key:
             st.error("❌ Please provide Groq API key!")
         elif not uploaded_file:
@@ -402,7 +523,7 @@ with st.sidebar:
             with st.spinner("Initializing..."):
                 try:
                     initialize_system(groq_api_key, uploaded_file, model_name, chunk_size, chunk_overlap, retrieval_k)
-                    st.success("✅ System initialized!")
+                    st.success("✓ System initialized!")
                     st.balloons()
                     
                 except Exception as e:
@@ -410,7 +531,7 @@ with st.sidebar:
 
     # Status indicators
     st.divider()
-    st.subheader("📊 Status")
+    st.subheader("Status")
     if st.session_state.initialized:
         st.markdown('<span class="status-badge success-badge">✓ Ready</span>', unsafe_allow_html=True)
         st.metric("Messages", len(st.session_state.conversation_history))
@@ -423,10 +544,10 @@ with st.sidebar:
         for log in st.session_state.debug_logs[-10:]:  # Show last 10 logs
             st.markdown(f'<div class="log-message">{log}</div>', unsafe_allow_html=True)
     
-    if st.button("🗑️ Clear Chat", use_container_width=True) and st.session_state.conversation_history:
+    if st.button(" Clear Chat", use_container_width=True) and st.session_state.conversation_history:
+        st.session_state.debug_logs = []
         st.session_state.conversation_history = []
         st.rerun()
-
 
         
 # Main area
@@ -438,14 +559,11 @@ st.markdown("""<div class="animated-bg">
         <div class="gradient-orb orb-1"></div>
         <div class="gradient-orb orb-2"></div>
         <div class="gradient-orb orb-3"></div>
+       
     </div>""",unsafe_allow_html=True)
 
 if not st.session_state.initialized:
-    # Using st.container for better compatibility
     st.markdown('<div class="home-container">', unsafe_allow_html=True)
-    
-    # Icon
-   # st.markdown('<div class="home-icon-wrapper"><div class="home-icon">🔍</div></div>', unsafe_allow_html=True)
     
     # Features grid
     col1, col2, col3 = st.columns(3)
@@ -453,7 +571,7 @@ if not st.session_state.initialized:
     with col1:
         st.markdown("""
         <div class="feature-card">
-            <div class="feature-ai"><img src="https://i.ibb.co/TqK11G3F/1752656706683-0-removebg-preview.png" class="img-1"></div>
+            <div class="feature-ai"><img src="https://i.ibb.co/nqfcHd53/1752656706683-0-removebg-preview.png" class="img-1"></div>
             <h3 class="feature-title">AI-Powered</h3>
             <p class="feature-description">Analyze feedback patterns automatically</p>
         </div>
@@ -465,7 +583,7 @@ if not st.session_state.initialized:
         <div class="feature-card">
             <div class="feature-search"><img src="https://i.ibb.co/JRqRnm0N/search-interface-symbol.png"</div>
             <h3 class="feature-title">Smart Search</h3>
-            <p class="feature-description">Find feedback instantly with </p>
+            <p class="feature-description">Find feedback instantly with AI</p>
         </div>
         """, unsafe_allow_html=True)
     
@@ -485,9 +603,10 @@ if not st.session_state.initialized:
     </div>
     """, unsafe_allow_html=True)
     
-    st.markdown('</div>', unsafe_allow_html=True)
+
     
 else:
+    # Display conversation history
     for msg in st.session_state.conversation_history:
         timestamp = datetime.now().strftime('%I:%M %p')
         
@@ -513,19 +632,24 @@ else:
     with st.form(key="chat_form", clear_on_submit=True):
         col1, col2 = st.columns([6, 1])
         with col1:
-            user_input = st.text_input("💬 Ask a question...", placeholder="e.g., Show me top 5 feedbacks", label_visibility="collapsed")
+            user_input = st.text_input("💬 Ask a question...",
+                                        placeholder="e.g., Show me top 5 feedbacks",
+                                          label_visibility="collapsed")
         with col2:
             send_button = st.form_submit_button("📤", use_container_width=True)
-    
+####################################################################################################################################
     if send_button and user_input:
-        with st.spinner("🤔 Thinking..."):
-            try:
-                st.session_state.conversation_history.append(HumanMessage(content=user_input))
-                result = st.session_state.rag_agent.invoke({"messages": [HumanMessage(content=user_input)]})
-                st.session_state.conversation_history.append(AIMessage(content=result['messages'][-1].content))
-                st.rerun()
-            except Exception as e:
-                st.error(f"❌ Error: {str(e)}")
+            with st.spinner("🤔 Thinking..."):
+                try:
+                    st.session_state.conversation_history.append(HumanMessage(content=user_input))
+                    result = st.session_state.rag_agent.invoke({"messages": [HumanMessage(content=user_input)]})
+                    st.session_state.conversation_history.append(AIMessage(content=result['messages'][-1].content))
+                    st.rerun()
+                except Exception as e:
+                    st.error(f"❌ Error: {str(e)}")
+
+
+#! +++++++++++++++++++++++++++++++++++++ TESTING++++++++++++++++++++++++++++++++++++++++
 st.markdown("---")
 col1, col2 , col3 ,col4= st.columns(4)
 with col1:
@@ -546,3 +670,11 @@ st.markdown("""
 
 st.markdown("---")
 
+# Cleanup on session end
+import atexit
+def cleanup_on_exit():
+    """Clean up temporary files when app closes"""
+    if 'temp_pdf_path' in st.session_state and st.session_state.temp_pdf_path:
+        cleanup_temp_file(st.session_state.temp_pdf_path)
+
+atexit.register(cleanup_on_exit)
