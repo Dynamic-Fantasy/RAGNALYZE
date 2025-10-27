@@ -1,4 +1,5 @@
 # RAGNALYZE Execution Flow
+```mermaid
 graph TB
     %% Phase 1: Initialization
     Start([🚀 Start Streamlit App]):::startStyle
@@ -117,3 +118,4 @@ graph TB
     classDef llmStyle fill:#F44336,stroke:#B71C1C,stroke-width:3px,color:#fff,font-weight:bold,font-size:14px
     classDef databaseStyle fill:#00BCD4,stroke:#006064,stroke-width:3px,color:#000,font-weight:bold,font-size:14px
     classDef decisionStyle fill:#FF5722,stroke:#BF360C,stroke-width:3px,color:#fff,font-weight:bold,font-size:14px
+```
