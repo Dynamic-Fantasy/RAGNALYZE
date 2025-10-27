@@ -2,7 +2,7 @@
 ```mermaid
 graph TB
     %% Phase 1: Initialization
-    Start([🚀 Start Streamlit App]):::startStyle
+    Start([ Start Streamlit App]):::startStyle
     UI[Initialize UI Components<br/>Gradient Theme & Chat Interface]:::processStyle
     
     %% Phase 2: Configuration
@@ -14,47 +14,47 @@ graph TB
     Ready{All Config<br/>Complete?}:::decisionStyle
     
     %% Phase 3: System Setup
-    InitBtn[👆 User Clicks Initialize System]:::processStyle
+    InitBtn[User Clicks Initialize System]:::processStyle
     Extract[Extract Text from PDF<br/>using PyPDF]:::processStyle
     Chunk[Chunk Text<br/>RecursiveCharacterTextSplitter<br/>Size: 1000, Overlap: 200]:::processStyle
     Embed[Generate Embeddings<br/>HuggingFace MiniLM-L6-v2]:::processStyle
-    Store[💾 Store in ChromaDB<br/>Vector Database]:::databaseStyle
+    Store[ Store in ChromaDB<br/>Vector Database]:::databaseStyle
     RAG[Initialize RAG Pipeline<br/>LangChain + LangGraph]:::processStyle
     SystemReady([✓ System Ready]):::startStyle
     
     %% Phase 4: Query Processing
-    WaitQuery[⏳ Wait for User Query]:::processStyle
-    UserInput[💬 User Enters Query]:::processStyle
-    Agent[🤖 LangGraph Agent<br/>Analyzes Intent]:::agentStyle
-    Route{🔀 Route to<br/>Appropriate Tool}:::decisionStyle
+    WaitQuery[ Wait for User Query]:::processStyle
+    UserInput[ User Enters Query]:::processStyle
+    Agent[ LangGraph Agent<br/>Analyzes Intent]:::agentStyle
+    Route{ Route to<br/>Appropriate Tool}:::decisionStyle
     
     %% Phase 5: Tool Execution - Path 1
-    ShowTool[🔍 show_feedbacks_tool<br/>Triggered: list/show/top N]:::toolStyle
+    ShowTool[ show_feedbacks_tool<br/>Triggered: list/show/top N]:::toolStyle
     QueryDB1[Query Vector Store]:::databaseStyle
     Format1[Format as Numbered List<br/>with Feedback IDs & Pages]:::processStyle
     Response1[Return Feedback List]:::processStyle
     
     %% Phase 5: Tool Execution - Path 2
-    RetrieverTool[🔎 retriever_tool<br/>Triggered: search/solutions]:::toolStyle
+    RetrieverTool[ retriever_tool<br/>Triggered: search/solutions]:::toolStyle
     Embed2[Convert Query to Embedding]:::processStyle
-    Search[🔍 Semantic Search in ChromaDB]:::databaseStyle
+    Search[ Semantic Search in ChromaDB]:::databaseStyle
     Retrieve[Retrieve K Similar Chunks]:::databaseStyle
     Rank[Rank by Relevance Score]:::processStyle
     Context[Combine Context from Chunks]:::processStyle
-    LLM[🧠 Pass to Groq LLM<br/>with Query + Context]:::llmStyle
+    LLM[ Pass to Groq LLM<br/>with Query + Context]:::llmStyle
     Generate[Generate Synthesized Answer]:::llmStyle
     Response2[Return AI Response]:::processStyle
     
     %% Phase 5: Tool Execution - Path 3
-    ExportTool[📄 export_chat_to_pdf<br/>Triggered: export/save]:::toolStyle
+    ExportTool[ export_chat_to_pdf<br/>Triggered: export/save]:::toolStyle
     History[Extract Chat History<br/>from Session State]:::processStyle
     FormatPDF[Format with ReportLab<br/>User/AI Message Styling]:::processStyle
-    SavePDF[💾 Save as chat_export.pdf]:::processStyle
+    SavePDF[ Save as chat_export.pdf]:::processStyle
     Response3[Confirm Export Complete]:::processStyle
     
     %% Phase 6: Response & Loop
-    Display[📺 Display Response in Chat UI<br/>User Blue / AI Pink-Red]:::processStyle
-    SaveHistory[💾 Save to Chat History]:::processStyle
+    Display[ Display Response in Chat UI<br/>User Blue / AI Pink-Red]:::processStyle
+    SaveHistory[ Save to Chat History]:::processStyle
     
     %% Flow Connections
     Start --> UI
