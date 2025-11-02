@@ -33,7 +33,7 @@ st.set_page_config(
 
 # Modern CSS with sleek design
 # Load external CSS file
-with open('styles.css') as f:
+with open('temp.css') as f:
     st.markdown(f'<style>{f.read()}</style>', unsafe_allow_html=True)
 
 # Initialize session state
@@ -496,6 +496,46 @@ with st.sidebar:
     st.subheader("📄 Upload PDF")
     uploaded_file = st.file_uploader("Choose a PDF file", type=['pdf'])
 
+
+    # ^#########################################################################################################################
+
+    st.divider()
+    st.subheader("Database Status")
+
+    # Show DB info if exists
+    if os.path.exists("./chroma_db"):
+        try:
+            # Calculate DB size
+            db_size = sum(
+                os.path.getsize(os.path.join(dirpath, filename))
+                for dirpath, dirnames, filenames in os.walk("./chroma_db")
+                for filename in filenames
+            ) / (1024 * 1024)  # Convert to MB
+            
+            st.markdown(f'<span class="status-badge success-badge">✓ Database Active</span>', unsafe_allow_html=True)
+            st.caption(f"Size: {db_size:.2f} MB")
+            
+            if st.button("🗑️ Clear Database", use_container_width=True, key="clear_db"):
+                try:
+                    import shutil
+                    shutil.rmtree("./chroma_db")
+                    st.session_state.vectorstore = None
+                    st.session_state.initialized = False
+                    log_debug("Database manually cleared")
+                    st.success("✅ Database cleared!")
+                    st.rerun()
+                except Exception as e:
+                    st.error(f"❌ Error: {str(e)}")
+        except Exception as e:
+            st.markdown(f'<span class="status-badge info-badge">⚠ Database Error</span>', unsafe_allow_html=True)
+            st.caption(f"Error: {str(e)[:50]}...")
+    else:
+        st.markdown(f'<span class="status-badge info-badge">○ No Database</span>', unsafe_allow_html=True)
+        st.caption("Upload and initialize to create database")
+
+
+ # ^#########################################################################################################################
+
     st.divider()
     
     st.subheader("🤖 Model Settings")
@@ -528,6 +568,7 @@ with st.sidebar:
                     
                 except Exception as e:
                     st.error(f"❌ Error: {str(e)}")
+        
 
     # Status indicators
     st.divider()
@@ -666,15 +707,3 @@ st.markdown("""
     <p class="footer-text">Smarter insights ❤️ powered by RAG </p>
 </div>
 """, unsafe_allow_html=True)
-
-
-st.markdown("---")
-
-# Cleanup on session end
-import atexit
-def cleanup_on_exit():
-    """Clean up temporary files when app closes"""
-    if 'temp_pdf_path' in st.session_state and st.session_state.temp_pdf_path:
-        cleanup_temp_file(st.session_state.temp_pdf_path)
-
-atexit.register(cleanup_on_exit)
