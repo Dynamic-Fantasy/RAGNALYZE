@@ -68,14 +68,14 @@
     animation-delay: 0s;
 }
 
-
+/*
 @keyframes float {
     0%, 100% { transform: translate(0, 0) scale(1); }
     25% { transform: translate(50px, -50px) scale(1.1); }
     50% { transform: translate(-30px, 30px) scale(0.9); }
     75% { transform: translate(30px, 50px) scale(1.05); }
 }
-
+*/
 /* ============================================
    SIDEBAR
    ============================================ */
@@ -217,12 +217,12 @@ h1 {
 
 .timestamp {
     color: #64748b;
-    font-size: 11px;
+    font-size: 14px;
     font-weight: 400;
     margin-left: 8px;
     position: absolute;
-    right: 30px;
-    top: 52px;
+    right: 35px;
+    top: 20px;
 }
 
 /* ============================================
@@ -347,8 +347,7 @@ h1 {
     border-color: rgba(99, 102, 241, 0.2) !important;
 }
 
-
-.stSelectbox > div > div > div {
+[data-testid="stSelectbox"] > div > div > div {
     background: rgba(30, 41, 59, 0.6);
     border: 1px solid rgba(99, 102, 241, 0.2);
     border-radius: 12px;
@@ -358,10 +357,12 @@ h1 {
     transition: all 0.3s ease;
 }
 
-.stSelectbox > div > div > div:hover {
+[data-testid="stSelectbox"] > div > div > div:hover {
     border-color: rgba(199, 199, 199, 0.4);
     background: rgba(114, 123, 139, 0.8);
 }
+
+
 
 [data-testid="stFileUploader"] {
     background: rgba(30, 41, 59, 0.4);
@@ -369,6 +370,10 @@ h1 {
     border-radius: 16px;
     padding: 20px;
 }
+
+
+
+
 
 /* ============================================
    STATUS BADGES
