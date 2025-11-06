@@ -669,6 +669,8 @@ st.markdown("""<div class="animated-bg">
 
 if not st.session_state.initialized:
     st.markdown('<div class="home-container">', unsafe_allow_html=True)
+
+
     
     # Features grid
     col1, col2, col3 = st.columns(3)
@@ -676,7 +678,7 @@ if not st.session_state.initialized:
     with col1:
         st.markdown("""
         <div class="feature-card">
-            <div class="feature-ai"><img src="https://i.ibb.co/nqfcHd53/1752656706683-0-removebg-preview.png" class="img-1"></div>
+            <div class="feature-ai"><img src="https://raw.githubusercontent.com/Dynamic-Fantasy/RAGNALYZE/main/assets/1752656706683-0-removebg-preview.png" class="img-1"></div>
             <h3 class="feature-title">AI-Powered</h3>
             <p class="feature-description">Analyze feedback patterns automatically</p>
         </div>
@@ -686,7 +688,7 @@ if not st.session_state.initialized:
     with col2:
         st.markdown("""
         <div class="feature-card">
-            <div class="feature-search"><img src="https://i.ibb.co/JRqRnm0N/search-interface-symbol.png"</div>
+            <div class="feature-search"><img src="https://raw.githubusercontent.com/Dynamic-Fantasy/RAGNALYZE/main/assets/search-interface-symbol.png"</div>
             <h3 class="feature-title">Smart Search</h3>
             <p class="feature-description">Find feedback instantly with AI</p>
         </div>
@@ -695,11 +697,14 @@ if not st.session_state.initialized:
     with col3:
         st.markdown("""
         <div class="feature-card">
-            <div class="feature-graph"><img src="https://i.ibb.co/fdqwCjw7/search-alt.png"</div>
+            <div class="feature-graph"><img src="https://raw.githubusercontent.com/Dynamic-Fantasy/RAGNALYZE/main/assets/audit.png"</div>
             <h3 class="feature-title">Quick Insights</h3>
             <p class="feature-description">Get recommendations in seconds</p>
         </div>
         """, unsafe_allow_html=True)
+
+    # !########################################################### TEsting #####################################################
+    st.markdown('</div>', unsafe_allow_html=True)  
     
     # CTA box
     st.markdown("""
@@ -756,8 +761,6 @@ else:
                 except Exception as e:
                     st.error(f"❌ Error: {str(e)}")
 
-
-#! +++++++++++++++++++++++++++++++++++++ TESTING++++++++++++++++++++++++++++++++++++++++
 st.markdown("---")
 col1, col2 , col3 ,col4= st.columns(4)
 with col1:
