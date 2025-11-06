@@ -68,14 +68,6 @@
     animation-delay: 0s;
 }
 
-/*
-@keyframes float {
-    0%, 100% { transform: translate(0, 0) scale(1); }
-    25% { transform: translate(50px, -50px) scale(1.1); }
-    50% { transform: translate(-30px, 30px) scale(0.9); }
-    75% { transform: translate(30px, 50px) scale(1.05); }
-}
-*/
 /* ============================================
    SIDEBAR
    ============================================ */
@@ -508,6 +500,7 @@ h1 {
     gap: 25px;
     margin-top: 60px;
     align-items: start;
+    
 }
 
 .feature-card {
@@ -523,6 +516,8 @@ h1 {
     margin-bottom: 20px;
     font-size: 18px;
     box-sizing: border-box;
+    margin-left: auto;
+    margin-right: auto;
 }
 
 .feature-card:hover {
@@ -854,15 +849,3 @@ img {
 }
 
 
-/*^ ###################################################################################################################*/
-
-/*
-[data-testid="stDialog"] div > p :first-child {
-    display: flex;
-
-    font-size: 20px;
-    font-weight: 700;
-    font-family: Inter;
-    color :#94a3b8;
-    
-} */
