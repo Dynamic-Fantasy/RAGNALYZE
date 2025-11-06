@@ -1,5 +1,5 @@
 # RAGNALYZE Execution Flow
-```
+```mermaid
 %%{init: {'theme':'base', 'themeVariables': { 'primaryColor':'#6366f1','primaryTextColor':'#fff','primaryBorderColor':'#4f46e5','lineColor':'#8b5cf6','secondaryColor':'#8b5cf6','tertiaryColor':'#ec4899','background':'#1e293b','mainBkg':'#3b82f6','secondBkg':'#8b5cf6','tertiaryBkg':'#ec4899','textColor':'#ffffff','nodeBorder':'#4f46e5','clusterBkg':'#334155','clusterBorder':'#6366f1','fontSize':'16px','nodeRadius':'15px'}}}%%
 
 graph TB
