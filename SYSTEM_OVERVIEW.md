@@ -1,86 +1,222 @@
 # RAGNALYZE Execution Flow
 ```mermaid
-%%{init: {'theme':'base', 'themeVariables': { 'primaryColor':'#6366f1','primaryTextColor':'#fff','primaryBorderColor':'#4f46e5','lineColor':'#8b5cf6','secondaryColor':'#8b5cf6','tertiaryColor':'#ec4899','background':'#1e293b','mainBkg':'#3b82f6','secondBkg':'#8b5cf6','tertiaryBkg':'#ec4899','textColor':'#ffffff','nodeBorder':'#4f46e5','clusterBkg':'#334155','clusterBorder':'#6366f1','fontSize':'16px','nodeRadius':'15px'}}}%%
-
 graph TB
-    Start([Start Application]) --> APICheck{API Key<br/>Valid?}
+    %% Phase 1: Initialization
+    Start([ Start Streamlit App]):::startStyle
+    UI[Initialize UI Components<br/>Gradient Theme & Chat Interface]:::processStyle
     
-    APICheck -->|No| APIDialog[API Key Dialog<br/>Validate & Save]
-    APIDialog --> APICheck
-    APICheck -->|Yes| UploadPDF[Upload PDF File]
+    %% Phase 2: Configuration
+    Sidebar[Display Sidebar Configuration]:::processStyle
+    API[Enter Groq API Key]:::configStyle
+    ValidateAPI{Validate<br/>API Key}:::decisionStyle
+    APISuccess[✓ API Key Valid]:::successStyle
+    APIFail[✗ API Key Invalid<br/>Show Error Dialog]:::errorStyle
     
-    UploadPDF --> Configure[Configure Settings<br/>Model, Chunk Size, Retrieval K]
-    Configure --> InitBtn[Click Initialize]
+    PDF[Upload PDF Document]:::configStyle
+    ValidatePDF{Valid PDF<br/>File?}:::decisionStyle
+    PDFSuccess[✓ PDF Uploaded]:::successStyle
+    PDFFail[✗ Invalid File Type<br/>Show Error]:::errorStyle
     
-    InitBtn --> InitSystem[Initialize System]
+    Model[Select LLM Model<br/>GPT-OSS/LLaMA/Mixtral]:::configStyle
+    Settings[Adjust Advanced Settings<br/>Chunk Size, Overlap, K]:::configStyle
+    Ready{All Config<br/>Complete?}:::decisionStyle
     
-    subgraph InitProcess ["<b style='font-size:20px'>INITIALIZATION PROCESS</b>"]
-        InitSystem --> SavePDF[Save Temp PDF]
-        SavePDF --> InitLLM[Initialize LLM<br/>ChatGroq Model]
-        InitLLM --> LoadPages[Load PDF Pages<br/>PyPDFLoader]
-        LoadPages --> SplitCheck{PDF Size<br/>Check}
-        
-        SplitCheck -->|Small ≤10 pages| SeqSplit[Sequential Split]
-        SplitCheck -->|Large >10 pages| ParSplit[Parallel Split<br/>Multi-Processing]
-        
-        ParSplit -->|Success| Embeddings[Load Embeddings<br/>HuggingFace Model]
-        ParSplit -->|Error| Fallback[Fallback to<br/>Sequential]
-        Fallback --> Embeddings
-        SeqSplit --> Embeddings
-        
-        Embeddings --> VectorDB[(Create VectorStore<br/>ChromaDB)]
-        VectorDB --> CreateTools[Setup Tools<br/>Retriever, Show Feedbacks, Export]
-        CreateTools --> BindTools[Bind Tools to LLM]
-        BindTools --> BuildGraph[Build LangGraph<br/>Agent Workflow]
-    end
+    %% Phase 3: System Setup
+    InitBtn[User Clicks Initialize System]:::processStyle
+    CheckPrereq{API Key &<br/>PDF Ready?}:::decisionStyle
+    PrereqFail[✗ Missing Requirements<br/>Show Error Message]:::errorStyle
     
-    BuildGraph --> Ready[System Ready]
+    Extract[Extract Text from PDF<br/>using PyPDF]:::processStyle
+    ExtractCheck{Extraction<br/>Success?}:::decisionStyle
+    ExtractFail[✗ PDF Extraction Failed<br/>Corrupted File?]:::errorStyle
     
-    Ready --> UserQuery[User Asks Question]
+    Chunk[Chunk Text<br/>RecursiveCharacterTextSplitter<br/>Size: 1000, Overlap: 200]:::processStyle
+    ParallelCheck{Use Parallel<br/>Processing?}:::decisionStyle
+    ParallelSplit[⚡ Parallel Split<br/>Multi-Processing]:::processStyle
+    SequentialSplit[Sequential Split<br/>Fallback Mode]:::processStyle
+    SplitError[✗ Parallel Split Failed<br/>Fallback Triggered]:::warningStyle
     
-    subgraph AgentFlow ["<b style='font-size:20px'>AGENT PROCESSING FLOW</b>"]
-        UserQuery --> LLMNode[LLM Node<br/>Process Query]
-        LLMNode --> NeedTool{Tool Call<br/>Required?}
-        
-        NeedTool -->|No| DirectAnswer[Direct Answer]
-        NeedTool -->|Yes| ToolExec[Execute Tool]
-        
-        ToolExec --> ToolType{Which<br/>Tool?}
-        
-        ToolType -->|Search| RetrieverTool[Retriever Tool<br/>Search PDF Content]
-        ToolType -->|List| ShowTool[Show Feedbacks Tool<br/>List Multiple Items]
-        ToolType -->|Export| ExportTool[Export Chat Tool<br/>Generate PDF]
-        
-        RetrieverTool --> VectorSearch[(Vector Search<br/>ChromaDB)]
-        ShowTool --> VectorSearch
-        
-        VectorSearch --> ReturnResults[Return Results]
-        ExportTool --> GeneratePDF[Generate PDF File]
-        GeneratePDF --> ReturnResults
-        
-        ReturnResults --> LLMNode
-        DirectAnswer --> DisplayAnswer[Display to User]
-    end
+    Embed[Generate Embeddings<br/>HuggingFace MiniLM-L6-v2]:::processStyle
+    EmbedCheck{Embeddings<br/>Generated?}:::decisionStyle
+    EmbedFail[✗ Embedding Failed<br/>Model Load Error]:::errorStyle
     
-    DisplayAnswer --> MoreQuestions{More<br/>Questions?}
-    MoreQuestions -->|Yes| UserQuery
-    MoreQuestions -->|No| ExportOption{Export<br/>Chat?}
+    Store[ Store in ChromaDB<br/>Vector Database]:::databaseStyle
+    StoreCheck{Storage<br/>Success?}:::decisionStyle
+    StoreFail[✗ ChromaDB Error<br/>Database Write Failed]:::errorStyle
     
-    ExportOption -->|Yes| FinalExport[Export Conversation<br/>to PDF]
-    ExportOption -->|No| End([End Session])
-    FinalExport --> End
+    RAG[Initialize RAG Pipeline<br/>LangChain + LangGraph]:::processStyle
+    SystemReady([✓ System Ready]):::successStyle
     
-    style Start fill:#10b981,stroke:#059669,stroke-width:3px,color:#fff
-    style End fill:#ef4444,stroke:#dc2626,stroke-width:3px,color:#fff
-    style Ready fill:#10b981,stroke:#059669,stroke-width:3px,color:#fff
-    style LLMNode fill:#6366f1,stroke:#4f46e5,stroke-width:3px,color:#fff
-    style VectorDB fill:#8b5cf6,stroke:#7c3aed,stroke-width:3px,color:#fff
-    style VectorSearch fill:#8b5cf6,stroke:#7c3aed,stroke-width:3px,color:#fff
-    style ParSplit fill:#f59e0b,stroke:#d97706,stroke-width:2px,color:#fff
-    style RetrieverTool fill:#3b82f6,stroke:#2563eb,stroke-width:2px,color:#fff
-    style ShowTool fill:#3b82f6,stroke:#2563eb,stroke-width:2px,color:#fff
-    style ExportTool fill:#3b82f6,stroke:#2563eb,stroke-width:2px,color:#fff
-    style DisplayAnswer fill:#10b981,stroke:#059669,stroke-width:2px,color:#fff
-    style InitProcess fill:#1e293b,stroke:#6366f1,stroke-width:3px
-    style AgentFlow fill:#1e293b,stroke:#8b5cf6,stroke-width:3px
-    ```
+    %% Phase 4: Query Processing
+    WaitQuery[ Wait for User Query]:::processStyle
+    UserInput[ User Enters Query]:::processStyle
+    ValidateInput{Query Not<br/>Empty?}:::decisionStyle
+    EmptyQuery[✗ Empty Query<br/>Ignored]:::errorStyle
+    
+    Agent[ LangGraph Agent<br/>Analyzes Intent]:::agentStyle
+    Route{Route to<br/>Appropriate Tool}:::decisionStyle
+    
+    %% Phase 5: Tool Execution - Path 1
+    ShowTool[ show_feedbacks_tool<br/>Triggered: list/show/top N]:::toolStyle
+    QueryDB1[Query Vector Store]:::databaseStyle
+    DB1Check{Results<br/>Found?}:::decisionStyle
+    NoResults1[✗ No Feedbacks Found<br/>Empty Database]:::errorStyle
+    Format1[Format as Numbered List<br/>with Feedback IDs & Pages]:::processStyle
+    Response1[✓ Return Feedback List]:::successStyle
+    
+    %% Phase 5: Tool Execution - Path 2
+    RetrieverTool[ retriever_tool<br/>Triggered: search/solutions]:::toolStyle
+    Embed2[Convert Query to Embedding]:::processStyle
+    Search[ Semantic Search in ChromaDB]:::databaseStyle
+    Retrieve[Retrieve K Similar Chunks]:::databaseStyle
+    ResultCheck{Relevant<br/>Results?}:::decisionStyle
+    NoResults2[✗ No Relevant Content<br/>Try Different Query]:::errorStyle
+    Rank[Rank by Relevance Score]:::processStyle
+    Context[Combine Context from Chunks]:::processStyle
+    LLM[ Pass to Groq LLM<br/>with Query + Context]:::llmStyle
+    LLMCheck{LLM Response<br/>Success?}:::decisionStyle
+    LLMFail[✗ LLM API Error<br/>Timeout/Rate Limit]:::errorStyle
+    Generate[Generate Synthesized Answer]:::llmStyle
+    Response2[✓ Return AI Response]:::successStyle
+    
+    %% Phase 5: Tool Execution - Path 3
+    ExportTool[ export_chat_to_pdf<br/>Triggered: export/save]:::toolStyle
+    History[Extract Chat History<br/>from Session State]:::processStyle
+    HistoryCheck{Chat History<br/>Exists?}:::decisionStyle
+    NoHistory[✗ No Chat to Export<br/>Empty Conversation]:::errorStyle
+    FormatPDF[Format with ReportLab<br/>User/AI Message Styling]:::processStyle
+    SavePDF[ Save as chat_export.pdf]:::processStyle
+    SaveCheck{File Saved<br/>Successfully?}:::decisionStyle
+    SaveFail[✗ PDF Export Failed<br/>Permission/Disk Error]:::errorStyle
+    Response3[✓ Confirm Export Complete]:::successStyle
+    
+    %% Phase 6: Response & Loop
+    Display[ Display Response in Chat UI<br/>User Blue / AI Pink-Red]:::processStyle
+    SaveHistory[ Save to Chat History]:::processStyle
+    
+    %% Flow Connections - Configuration Phase
+    Start --> UI
+    UI --> Sidebar
+    Sidebar --> API
+    API --> ValidateAPI
+    ValidateAPI -->|Success| APISuccess
+    ValidateAPI -->|Fail| APIFail
+    APIFail --> API
+    APISuccess --> Ready
+    
+    Sidebar --> PDF
+    PDF --> ValidatePDF
+    ValidatePDF -->|Valid| PDFSuccess
+    ValidatePDF -->|Invalid| PDFFail
+    PDFFail --> PDF
+    PDFSuccess --> Ready
+    
+    Sidebar --> Model
+    Sidebar --> Settings
+    Model --> Ready
+    Settings --> Ready
+    
+    Ready -->|No| Sidebar
+    Ready -->|Yes| InitBtn
+    
+    %% Flow Connections - Initialization Phase
+    InitBtn --> CheckPrereq
+    CheckPrereq -->|Fail| PrereqFail
+    CheckPrereq -->|Pass| Extract
+    PrereqFail --> Sidebar
+    
+    Extract --> ExtractCheck
+    ExtractCheck -->|Fail| ExtractFail
+    ExtractCheck -->|Success| Chunk
+    ExtractFail --> Sidebar
+    
+    Chunk --> ParallelCheck
+    ParallelCheck -->|Large PDF| ParallelSplit
+    ParallelCheck -->|Small PDF| SequentialSplit
+    ParallelSplit -->|Error| SplitError
+    SplitError --> SequentialSplit
+    ParallelSplit -->|Success| Embed
+    SequentialSplit --> Embed
+    
+    Embed --> EmbedCheck
+    EmbedCheck -->|Fail| EmbedFail
+    EmbedCheck -->|Success| Store
+    EmbedFail --> Sidebar
+    
+    Store --> StoreCheck
+    StoreCheck -->|Fail| StoreFail
+    StoreCheck -->|Success| RAG
+    StoreFail --> Sidebar
+    
+    RAG --> SystemReady
+    
+    %% Flow Connections - Query Phase
+    SystemReady --> WaitQuery
+    WaitQuery --> UserInput
+    UserInput --> ValidateInput
+    ValidateInput -->|Empty| EmptyQuery
+    ValidateInput -->|Valid| Agent
+    EmptyQuery --> WaitQuery
+    
+    Agent --> Route
+    
+    %% Flow Connections - Tool Path 1
+    Route -->|List Queries| ShowTool
+    ShowTool --> QueryDB1
+    QueryDB1 --> DB1Check
+    DB1Check -->|Empty| NoResults1
+    DB1Check -->|Found| Format1
+    NoResults1 --> Display
+    Format1 --> Response1
+    Response1 --> Display
+    
+    %% Flow Connections - Tool Path 2
+    Route -->|Search Queries| RetrieverTool
+    RetrieverTool --> Embed2
+    Embed2 --> Search
+    Search --> Retrieve
+    Retrieve --> ResultCheck
+    ResultCheck -->|No Results| NoResults2
+    ResultCheck -->|Found| Rank
+    NoResults2 --> Display
+    Rank --> Context
+    Context --> LLM
+    LLM --> LLMCheck
+    LLMCheck -->|Fail| LLMFail
+    LLMCheck -->|Success| Generate
+    LLMFail --> Display
+    Generate --> Response2
+    Response2 --> Display
+    
+    %% Flow Connections - Tool Path 3
+    Route -->|Export Command| ExportTool
+    ExportTool --> History
+    History --> HistoryCheck
+    HistoryCheck -->|Empty| NoHistory
+    HistoryCheck -->|Exists| FormatPDF
+    NoHistory --> Display
+    FormatPDF --> SavePDF
+    SavePDF --> SaveCheck
+    SaveCheck -->|Fail| SaveFail
+    SaveCheck -->|Success| Response3
+    SaveFail --> Display
+    Response3 --> Display
+    
+    %% Final Loop
+    Display --> SaveHistory
+    SaveHistory --> WaitQuery
+    
+    %% Styling with high contrast
+    classDef startStyle fill:#4CAF50,stroke:#2E7D32,stroke-width:3px,color:#000,font-weight:bold,font-size:16px
+    classDef successStyle fill:#4CAF50,stroke:#2E7D32,stroke-width:3px,color:#000,font-weight:bold,font-size:14px
+    classDef errorStyle fill:#F44336,stroke:#B71C1C,stroke-width:3px,color:#fff,font-weight:bold,font-size:14px
+    classDef warningStyle fill:#FF9800,stroke:#E65100,stroke-width:3px,color:#000,font-weight:bold,font-size:14px
+    classDef configStyle fill:#FFC107,stroke:#F57F17,stroke-width:3px,color:#000,font-weight:bold,font-size:14px
+    classDef processStyle fill:#2196F3,stroke:#0D47A1,stroke-width:3px,color:#fff,font-weight:bold,font-size:14px
+    classDef agentStyle fill:#FF9800,stroke:#E65100,stroke-width:3px,color:#000,font-weight:bold,font-size:14px
+    classDef toolStyle fill:#9C27B0,stroke:#4A148C,stroke-width:3px,color:#fff,font-weight:bold,font-size:14px
+    classDef llmStyle fill:#F44336,stroke:#B71C1C,stroke-width:3px,color:#fff,font-weight:bold,font-size:14px
+    classDef databaseStyle fill:#00BCD4,stroke:#006064,stroke-width:3px,color:#000,font-weight:bold,font-size:14px
+    classDef decisionStyle fill:#FF5722,stroke:#BF360C,stroke-width:3px,color:#fff,font-weight:bold,font-size:14px
+
+```
