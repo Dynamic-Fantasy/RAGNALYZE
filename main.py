@@ -6,6 +6,7 @@ import re
 from datetime import datetime
 from typing import Annotated, Sequence
 from typing_extensions import TypedDict
+import time
 
 from langchain_core.messages import BaseMessage, SystemMessage, HumanMessage, ToolMessage, AIMessage
 from langchain_core.tools import tool
@@ -22,6 +23,46 @@ from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
 from reportlab.lib.units import inch
 from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer
 from reportlab.lib.colors import HexColor
+from concurrent.futures import ProcessPoolExecutor
+import multiprocessing
+
+
+def split_documents_worker(args):
+    """Worker function for process pool - must be pickle-able"""
+    docs_batch, chunk_size, chunk_overlap = args
+    text_splitter = RecursiveCharacterTextSplitter(
+        chunk_size=chunk_size,
+        chunk_overlap=chunk_overlap
+    )
+    return text_splitter.split_documents(docs_batch)
+
+
+def parallel_split_documents_processes(pages, chunk_size, chunk_overlap, max_workers=None):
+    """Split documents using ProcessPoolExecutor"""
+    if max_workers is None:
+        max_workers = max(1, multiprocessing.cpu_count() - 1)
+    
+    if len(pages) <= 10:  # For Small PDF
+        text_splitter = RecursiveCharacterTextSplitter(
+            chunk_size=chunk_size,
+            chunk_overlap=chunk_overlap
+        )
+        return text_splitter.split_documents(pages)
+    
+    
+    #Parallel Processing for large files
+    batch_size = max(1, len(pages) // max_workers)
+    batches = [pages[i:i + batch_size] for i in range(0, len(pages), batch_size)]
+    worker_args = [(batch, chunk_size, chunk_overlap) for batch in batches]
+    
+    all_splits = []
+    
+    with ProcessPoolExecutor(max_workers=max_workers) as executor:
+        results = executor.map(split_documents_worker, worker_args)
+        for batch_splits in results:
+            all_splits.extend(batch_splits)
+    
+    return all_splits
 
 # Page configuration
 st.set_page_config(
@@ -35,6 +76,35 @@ st.set_page_config(
 # Load external CSS file
 with open('temp.css') as f:
     st.markdown(f'<style>{f.read()}</style>', unsafe_allow_html=True)
+
+#caching Embedding Model
+@st.cache_resource
+def get_embeddings_model():
+    """Load embeddings model once and cache it"""
+    return HuggingFaceEmbeddings(
+        model_name="sentence-transformers/all-MiniLM-L6-v2",
+        cache_folder="./models_cache" 
+    )
+@st.cache_data
+def load_pdf_pages(_pdf_path: str):
+    """Load PDF pages and cache the result"""
+    time.sleep(60)
+    pdf_loader = PyPDFLoader(_pdf_path)
+    pages = pdf_loader.load()
+    return pages
+
+@st.cache_data
+def split_documents(_pages, chunk_size: int, chunk_overlap: int):
+    """Split documents with caching"""
+    start_time = time.time()
+    all_splits = parallel_split_documents_processes(
+        _pages, 
+        chunk_size, 
+        chunk_overlap,
+        max_workers=4
+    )
+    split_time = time.time() - start_time
+    return all_splits, split_time
 
 # Initialize session state
 if 'conversation_history' not in st.session_state:
@@ -52,12 +122,14 @@ if 'debug_logs' not in st.session_state:
 if 'temp_pdf_path' not in st.session_state:
     st.session_state.temp_pdf_path = None
 
+# Debug Log for the System Messages
 def log_debug(message):
     """Add debug log message"""
     st.session_state.debug_logs.append(f"[{datetime.now().strftime('%I:%M %p')}]\n {message}")
     if len(st.session_state.debug_logs) > 10:
         st.session_state.debug_logs = st.session_state.debug_logs[-10:]
 
+# temp file cleanup     
 def cleanup_temp_file(filepath):
     """Safely remove temporary file"""
     try:
@@ -75,6 +147,7 @@ def initialize_system(groq_api_key, uploaded_file, model_name, chunk_size, chunk
     # Cleanup old temp file if exists
     if st.session_state.temp_pdf_path:
         cleanup_temp_file(st.session_state.temp_pdf_path)
+
     #Save Uploaded File
     pdf_path = f"temp_{uploaded_file.name}"
     st.session_state.temp_pdf_path = pdf_path
@@ -85,23 +158,16 @@ def initialize_system(groq_api_key, uploaded_file, model_name, chunk_size, chunk
     llm = ChatGroq(model=model_name, api_key=groq_api_key)
     log_debug(f"LLM initialized with model: {model_name}")
 
-    # Load and Process PDF
-    pdf_loader = PyPDFLoader(pdf_path)
-    pages = pdf_loader.load()
+    # Page Splitting
+    pages = load_pdf_pages(pdf_path)
     log_debug(f"Pages loaded successfully: {len(pages)} pages")
     
-    # Split Text
-    text_splitter = RecursiveCharacterTextSplitter(
-        chunk_size=chunk_size, 
-        chunk_overlap=chunk_overlap
-    )
-    all_splits = text_splitter.split_documents(pages)
-    log_debug(f"Text split into {len(all_splits)} chunks")
+    # Split Text (with spinner from cache)
+    all_splits, split_time = split_documents(pages, chunk_size, chunk_overlap)
+    log_debug(f"Text split into {len(all_splits)} chunks in {split_time:.2f}s")
 
     # Creating embeddings
-    embeddings = HuggingFaceEmbeddings(
-        model_name="sentence-transformers/all-MiniLM-L6-v2"
-    )
+    embeddings = get_embeddings_model()
     log_debug("Embeddings model loaded")
 
     # Create VectorStore
@@ -123,8 +189,9 @@ def initialize_system(groq_api_key, uploaded_file, model_name, chunk_size, chunk
         search_kwargs={"k": retrieval_k}
         
     )
-
-    @tool
+    
+    #There are 3 tools in total
+    @tool       
     def retriever_tool(query: str) -> str:
         """
         This tool searches and returns information from the uploaded PDF.
@@ -143,7 +210,7 @@ def initialize_system(groq_api_key, uploaded_file, model_name, chunk_size, chunk
             results = []
             for i, doc in enumerate(docs , 1):
 
-                # ^ feature 
+                # ^ Under development 
                 content = doc.page_content[:500] + "..." if len(doc.page_content) > 500 else doc.page_content
                 results.append(f"Document {i+1}:\n{content}")
             
@@ -154,7 +221,6 @@ def initialize_system(groq_api_key, uploaded_file, model_name, chunk_size, chunk
     
 
 
-    # Define tools with EXACT original logic
     @tool
     def show_feedbacks_tool(query: str) -> str:
 
@@ -411,7 +477,6 @@ def api_key_dialog():
                         if r.status_code == 200:
                             api_data = r.json()
                             if api_data.get("data") and api_data["data"][0].get("active", False):
-                                # Valid key - save it
                                 config = {}
                                 try:
                                     with open("config.json") as f:
@@ -515,7 +580,7 @@ with st.sidebar:
             st.markdown(f'<span class="status-badge success-badge">✓ Database Active</span>', unsafe_allow_html=True)
             st.caption(f"Size: {db_size:.2f} MB")
             
-            if st.button("🗑️ Clear Database", use_container_width=True, key="clear_db"):
+            if st.button(" Clear Database", use_container_width=True, key="clear_db"):
                 try:
                     import shutil
                     shutil.rmtree("./chroma_db")
@@ -541,7 +606,6 @@ with st.sidebar:
     st.subheader("🤖 Model Settings")
     model_list =[
     "openai/gpt-oss-120b", 
-
     "openai/gpt-oss-20b",
     "llama-3.1-8b",
     "llama-3.3-70b"
@@ -554,7 +618,7 @@ with st.sidebar:
         chunk_overlap = st.number_input("Chunk Overlap", 0, 500, 200)
         retrieval_k = st.number_input("Retrieval K", 1, 10, 5)
     
-    if st.button("🚀 Initialize System", use_container_width=True , type="primary"):
+    if st.button(" Initialize System", use_container_width=True , type="primary"):
         if not groq_api_key:
             st.error("❌ Please provide Groq API key!")
         elif not uploaded_file:
@@ -600,8 +664,8 @@ st.markdown("""<div class="animated-bg">
         <div class="gradient-orb orb-1"></div>
         <div class="gradient-orb orb-2"></div>
         <div class="gradient-orb orb-3"></div>
-       
     </div>""",unsafe_allow_html=True)
+
 
 if not st.session_state.initialized:
     st.markdown('<div class="home-container">', unsafe_allow_html=True)
@@ -643,6 +707,9 @@ if not st.session_state.initialized:
         <p class="cta-text"> Configure and initialize the system using the sidebar</p>
     </div>
     """, unsafe_allow_html=True)
+
+    # ^ added a new snippet
+    st.markdown('</div>', unsafe_allow_html=True)  
     
 
     
@@ -677,7 +744,7 @@ else:
                                         placeholder="e.g., Show me top 5 feedbacks",
                                           label_visibility="collapsed")
         with col2:
-            send_button = st.form_submit_button("📤", use_container_width=True)
+            send_button = st.form_submit_button("➤", use_container_width=True)
 ####################################################################################################################################
     if send_button and user_input:
             with st.spinner("🤔 Thinking..."):
