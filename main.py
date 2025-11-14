@@ -88,7 +88,6 @@ def get_embeddings_model():
 @st.cache_data
 def load_pdf_pages(_pdf_path: str):
     """Load PDF pages and cache the result"""
-    time.sleep(60)
     pdf_loader = PyPDFLoader(_pdf_path)
     pages = pdf_loader.load()
     return pages
@@ -777,4 +776,5 @@ st.markdown("""
     <p class="footer-text">Smarter insights ❤️ powered by RAG </p>
 </div>
 """, unsafe_allow_html=True)
+
 
